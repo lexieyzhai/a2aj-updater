@@ -8,26 +8,32 @@ from datetime import datetime, timezone
 from huggingface_hub import HfApi
 from datasets import load_dataset
 
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
 REPO_ID = os.getenv("HF_REPO_ID", "a2aj/canadian-case-law")
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
-DRIVE_SA_JSON = os.getenv("DRIVE_SA_JSON")
 STATE_FILENAME = os.getenv("STATE_FILENAME", "a2aj_last_commit.txt")
+
+CLIENT_ID = os.getenv("GDRIVE_CLIENT_ID")
+CLIENT_SECRET = os.getenv("GDRIVE_CLIENT_SECRET")
+REFRESH_TOKEN = os.getenv("GDRIVE_REFRESH_TOKEN")
 
 if not DRIVE_FOLDER_ID:
     print("Missing DRIVE_FOLDER_ID env var", file=sys.stderr)
     sys.exit(2)
 
-if not DRIVE_SA_JSON:
-    print("Missing DRIVE_SA_JSON env var", file=sys.stderr)
+if not (CLIENT_ID and CLIENT_SECRET and REFRESH_TOKEN):
+    print("Missing Google OAuth env vars (GDRIVE_CLIENT_ID/SECRET/REFRESH_TOKEN)", file=sys.stderr)
     sys.exit(2)
 
-sa_info = json.loads(DRIVE_SA_JSON)
-creds = service_account.Credentials.from_service_account_info(
-    sa_info,
+creds = Credentials(
+    None,
+    refresh_token=REFRESH_TOKEN,
+    token_uri="https://oauth2.googleapis.com/token",
+    client_id=CLIENT_ID,
+    client_secret=CLIENT_SECRET,
     scopes=["https://www.googleapis.com/auth/drive"],
 )
 
@@ -35,32 +41,13 @@ drive = build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
 def list_files_in_folder(name, folder_id):
-    q = (
-        f"name='{name}' and '{folder_id}' in parents and trashed=false"
-    )
-    res = drive.files().list(
-        q=q,
-        fields="files(id, name)",
-        pageSize=10,
-    ).execute()
+    q = f"name='{name}' and '{folder_id}' in parents and trashed=false"
+    res = drive.files().list(q=q, fields="files(id, name)", pageSize=10).execute()
     return res.get("files", [])
 
 
-def read_text_file(file_id):
-    request = drive.files().get_media(fileId=file_id)
-    fh = io.BytesIO()
-    downloader = MediaIoBaseUpload(fh, mimetype="text/plain")
-    # MediaIoBaseUpload isn't a downloader, so use a simple export via execute
-    data = request.execute()
-    return data.decode("utf-8")
-
-
 def upload_text_file(name, text, folder_id, existing_id=None):
-    media = MediaIoBaseUpload(
-        io.BytesIO(text.encode("utf-8")),
-        mimetype="text/plain",
-        resumable=False,
-    )
+    media = MediaIoBaseUpload(io.BytesIO(text.encode("utf-8")), mimetype="text/plain", resumable=False)
     if existing_id:
         drive.files().update(fileId=existing_id, media_body=media).execute()
     else:
@@ -72,11 +59,7 @@ def get_or_create_folder(name, parent_id):
     existing = list_files_in_folder(name, parent_id)
     if existing:
         return existing[0]["id"]
-    metadata = {
-        "name": name,
-        "mimeType": "application/vnd.google-apps.folder",
-        "parents": [parent_id],
-    }
+    metadata = {"name": name, "mimeType": "application/vnd.google-apps.folder", "parents": [parent_id]}
     created = drive.files().create(body=metadata, fields="id").execute()
     return created["id"]
 
@@ -119,7 +102,6 @@ def build_zip_from_texts(rows, set_name):
                 date_str = str(date)
 
         base = citation or name or f"{set_name}_{i:06d}"
-        # ASCII-safe filename
         base = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in base)
         base = "_".join(part for part in base.split("_") if part)
         if date_str:

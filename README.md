@@ -21,30 +21,55 @@ This repo creates a **free, shareable web page** that triggers a GitHub Actions 
 - Source: `Deploy from a branch`
 - Branch: `main` and folder: `/docs`
 
-### 3) Create a Google Drive service account
-1. Go to Google Cloud Console
-2. Create a new project
-3. Enable **Google Drive API** for the project
-4. Create a **Service Account**
-5. Create a **JSON key** for the service account and download it
+### 3) Google Drive OAuth (recommended)
+Service accounts often fail with "no storage quota". Use OAuth refresh token instead.
 
-### 4) Share your Drive folder with the service account
-- Your folder ID: `1TgbucxzWLsMILWroPMVoBVY53st7Q3Vq`
-- In Google Drive, open the folder and share it with the service account email
-  (the email is in the JSON key file).
+#### Create OAuth client
+1. Google Cloud Console -> APIs & Services -> Credentials
+2. Create Credentials -> OAuth client ID
+3. App type: **Desktop app** (or **Web** if you prefer)
+4. Download the client JSON and save the **Client ID** and **Client Secret**
 
-### 5) Add GitHub secrets and variables
+#### Create a refresh token (one-time)
+Run this locally and follow the prompts:
+```
+python3 - <<'PY'
+import json
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+CLIENT_ID = "PASTE_CLIENT_ID"
+CLIENT_SECRET = "PASTE_CLIENT_SECRET"
+
+flow = InstalledAppFlow.from_client_config(
+    {
+        "installed": {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    },
+    scopes=["https://www.googleapis.com/auth/drive"],
+)
+creds = flow.run_local_server(port=0)
+print("REFRESH_TOKEN:", creds.refresh_token)
+PY
+```
+
+### 4) Add GitHub secrets and variables
 In your repo:
 - Settings -> Secrets and variables -> Actions
 
 **Secrets**
-- `DRIVE_SA_JSON` = the full JSON key file contents
-- `HF_TOKEN` (optional) = Hugging Face token to speed up downloads
+- `GDRIVE_CLIENT_ID`
+- `GDRIVE_CLIENT_SECRET`
+- `GDRIVE_REFRESH_TOKEN`
+- `HF_TOKEN` (optional)
 
 **Variables**
 - `DRIVE_FOLDER_ID` = `1TgbucxzWLsMILWroPMVoBVY53st7Q3Vq`
 
-### 6) Update the website button
+### 5) Update the website button
 Edit `docs/app.js` and set:
 - `REPO_OWNER` = your GitHub username
 - `REPO_NAME` = your repo name
