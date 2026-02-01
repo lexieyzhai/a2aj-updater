@@ -1,0 +1,7 @@
+# Core
+huggingface_hub>=0.24.0
+# Dataset handling
+datasets>=2.19.0
+# Google Drive API
+google-api-python-client>=2.120.0
+google-auth>=2.29.0

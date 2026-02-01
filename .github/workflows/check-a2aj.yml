@@ -1,0 +1,28 @@
+name: Check A2AJ Updates
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
+
+      - name: Run update check
+        env:
+          DRIVE_FOLDER_ID: ${{ vars.DRIVE_FOLDER_ID }}
+          DRIVE_SA_JSON: ${{ secrets.DRIVE_SA_JSON }}
+          HF_REPO_ID: a2aj/canadian-case-law
+          # Optional: set HF_TOKEN as a secret to speed up downloads
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python scripts/check_a2aj.py
