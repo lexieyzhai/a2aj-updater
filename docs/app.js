@@ -1,6 +1,6 @@
 // Update these two values after you create the GitHub repo.
-const REPO_OWNER = "YOUR_GITHUB_USER";
-const REPO_NAME = "YOUR_REPO";
+const REPO_OWNER = "lexieyzhai";
+const REPO_NAME = "a2aj-updater";
 const WORKFLOW_FILE = "check-a2aj.yml";
 
 const runBtn = document.getElementById("runBtn");
