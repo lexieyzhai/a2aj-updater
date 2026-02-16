@@ -3,35 +3,53 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>A2AJ Update Checker</title>
+  <title>FNAF: Guess The Character</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="wrap">
-    <header>
-      <h1>A2AJ Update Checker</h1>
-      <p class="sub">Check for new RPD/RLLR cases and push updates to Google Drive.</p>
+  <div class="fog"></div>
+  <main class="game-shell">
+    <header class="title-block">
+      <p class="eyebrow">Three lives. Three guesses per level.</p>
+      <h1>Guess The FNAF Character</h1>
+      <p class="subtitle">Open clues one by one, then lock in your guess before the night shift ends.</p>
     </header>
 
-    <section class="card">
-      <h2>Run an update check</h2>
-      <p>This button triggers the GitHub Actions workflow. If there is a new dataset snapshot, it will download, filter RPD/RLLR, and upload new files to Drive. If nothing new, it will say so in the workflow logs.</p>
-      <div class="actions">
-        <button id="runBtn">Run update check</button>
-        <a id="runsLink" class="secondary" href="#" target="_blank" rel="noreferrer">View workflow runs</a>
+    <section class="hud" aria-live="polite">
+      <div class="hud-item">
+        <span class="label">Level</span>
+        <strong id="levelValue">1</strong>
       </div>
-      <p class="note">Tip: You must be logged into GitHub for the button to work.</p>
+      <div class="hud-item">
+        <span class="label">Lives</span>
+        <strong id="livesValue">3</strong>
+      </div>
+      <div class="hud-item">
+        <span class="label">Guesses Left</span>
+        <strong id="guessesValue">3</strong>
+      </div>
     </section>
 
-    <section class="card">
-      <h2>Where the files go</h2>
-      <p>New uploads land in your Google Drive folder (inside an <strong>A2AJ_updates</strong> subfolder) with a timestamped run folder and zipped RPD/RLLR files.</p>
-      <p class="muted">You can share this page with others so they can click the button for you.</p>
+    <section class="panel">
+      <h2>Clues</h2>
+      <div id="clueGrid" class="clue-grid"></div>
     </section>
 
-    <footer>
-      <p class="muted">If you need help, check the README in the repo for setup steps.</p>
-    </footer>
+    <section class="panel controls">
+      <label for="guessInput">Your guess</label>
+      <div class="guess-row">
+        <input id="guessInput" type="text" placeholder="Type a character name" autocomplete="off" />
+        <button id="guessBtn" type="button">Submit Guess</button>
+      </div>
+      <p id="message" class="message">Night 1 begins. Reveal a clue to start.</p>
+    </section>
+
+    <section class="panel actions">
+      <button id="restartBtn" class="secondary" type="button">Restart Full Game</button>
+    </section>
   </main>
 
   <script src="app.js"></script>
