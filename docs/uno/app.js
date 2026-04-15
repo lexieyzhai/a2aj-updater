@@ -1,5 +1,6 @@
 const MAX_PLAYERS = 6;
 const HAND_SIZE = 7;
+const JOIN_TIMEOUT_MS = 3000;
 const STORAGE_KEY = "literally-uno-profile";
 const HOST_PREFIX = "literally-uno-";
 const PLAYER_COLORS = ["red", "yellow", "green", "blue", "wild", "green"];
@@ -734,9 +735,29 @@ function hostRoom(roomId) {
   });
 }
 
-function joinRoom(roomId) {
+function joinRoom(roomId, options = {}) {
   if (state.peer) {
     state.peer.destroy();
+  }
+
+  const allowHostFallback = options.allowHostFallback || false;
+  let receivedSnapshot = false;
+  let joinTimeoutId = 0;
+
+  function clearJoinTimeout() {
+    if (joinTimeoutId) {
+      window.clearTimeout(joinTimeoutId);
+      joinTimeoutId = 0;
+    }
+  }
+
+  function promoteToHost(reason) {
+    if (!allowHostFallback || receivedSnapshot || state.isHost) {
+      return;
+    }
+    clearJoinTimeout();
+    setStatus(reason);
+    hostRoom(roomId);
   }
 
   resetNetworkState();
@@ -748,6 +769,12 @@ function joinRoom(roomId) {
 
   state.peer = new Peer();
   state.peer.on("open", () => {
+    if (allowHostFallback) {
+      joinTimeoutId = window.setTimeout(() => {
+        promoteToHost("No active host answered. This tab is hosting the room now.");
+      }, JOIN_TIMEOUT_MS);
+    }
+
     state.hostConnection = state.peer.connect(roomId, { reliable: true });
     state.hostConnection.on("open", () => {
       state.hostConnection.send({
@@ -760,25 +787,41 @@ function joinRoom(roomId) {
       render();
     });
     state.hostConnection.on("error", (error) => {
+      if (allowHostFallback) {
+        promoteToHost("Could not find an active host. This tab is hosting the room now.");
+        return;
+      }
       setStatus(`Could not join room: ${error.type || error.message}`);
     });
     state.hostConnection.on("data", (message) => {
       if (message.type === "snapshot") {
+        receivedSnapshot = true;
+        clearJoinTimeout();
         state.snapshot = message.payload;
         state.localHand = message.payload.selfHand || [];
         render();
       }
       if (message.type === "error") {
+        clearJoinTimeout();
         setStatus(message.payload);
       }
     });
     state.hostConnection.on("close", () => {
+      if (!receivedSnapshot && allowHostFallback) {
+        promoteToHost("No host was active for that room. This tab is hosting it now.");
+        return;
+      }
+      clearJoinTimeout();
       els.connectionValue.textContent = "Disconnected";
       setStatus("Host disconnected. Start or join a fresh room.");
     });
   });
 
   state.peer.on("error", (error) => {
+    if (allowHostFallback) {
+      promoteToHost("Join failed. This tab is hosting the room now.");
+      return;
+    }
     setStatus(`Connection failed: ${error.type || error.message}`);
   });
 }
@@ -808,7 +851,9 @@ function attachEvents() {
     if (!inputRoom) {
       return;
     }
-    joinRoom(inputRoom.startsWith(HOST_PREFIX) ? inputRoom : `${HOST_PREFIX}${inputRoom}`);
+    joinRoom(inputRoom.startsWith(HOST_PREFIX) ? inputRoom : `${HOST_PREFIX}${inputRoom}`, {
+      allowHostFallback: true
+    });
   });
 
   els.startGameBtn.addEventListener("click", () => {
@@ -872,7 +917,7 @@ function boot() {
   const roomFromUrl = readRoomFromUrl();
   attachEvents();
   if (roomFromUrl) {
-    joinRoom(roomFromUrl);
+    joinRoom(roomFromUrl, { allowHostFallback: true });
   } else {
     hostRoom(makeRoomId());
   }
