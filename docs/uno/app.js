@@ -759,6 +759,9 @@ function joinRoom(roomId) {
       });
       render();
     });
+    state.hostConnection.on("error", (error) => {
+      setStatus(`Could not join room: ${error.type || error.message}`);
+    });
     state.hostConnection.on("data", (message) => {
       if (message.type === "snapshot") {
         state.snapshot = message.payload;
@@ -867,9 +870,12 @@ function boot() {
   state.selfName = normalizeName(profile.name || "Player");
   els.playerName.value = state.selfName;
   const roomFromUrl = readRoomFromUrl();
-  const initialRoom = roomFromUrl || makeRoomId();
   attachEvents();
-  hostRoom(initialRoom);
+  if (roomFromUrl) {
+    joinRoom(roomFromUrl);
+  } else {
+    hostRoom(makeRoomId());
+  }
   render();
 }
 
