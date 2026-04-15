@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Literally UNO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="hero panel">
+      <div>
+        <p class="eyebrow">Shareable multiplayer room</p>
+        <h1>Literally UNO</h1>
+        <p class="intro">Host a room, share the link, and play in the browser with up to 6 people. The first player opens the room and runs the game state for everyone else.</p>
+      </div>
+      <div class="hero-actions">
+        <button id="copyLinkBtn" type="button" class="secondary">Copy Room Link</button>
+        <button id="newRoomBtn" type="button">New Room</button>
+      </div>
+    </section>
+
+    <section class="lobby-grid">
+      <div class="panel">
+        <h2>Room</h2>
+        <div class="room-meta">
+          <div>
+            <span class="label">Room ID</span>
+            <strong id="roomIdValue">Pending</strong>
+          </div>
+          <div>
+            <span class="label">Role</span>
+            <strong id="roleValue">Connecting</strong>
+          </div>
+          <div>
+            <span class="label">Connection</span>
+            <strong id="connectionValue">Starting</strong>
+          </div>
+        </div>
+
+        <form id="joinForm" class="join-form">
+          <label for="playerName">Display name</label>
+          <input id="playerName" type="text" maxlength="16" placeholder="Player name" autocomplete="nickname" />
+
+          <label for="roomInput">Join another room</label>
+          <div class="join-row">
+            <input id="roomInput" type="text" maxlength="24" placeholder="Room code" />
+            <button type="submit">Join Room</button>
+          </div>
+        </form>
+
+        <div class="start-row">
+          <button id="startGameBtn" type="button">Start Match</button>
+          <p id="roomHint" class="status-line">Need at least 2 players to start.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Players</h2>
+        <div id="playersList" class="players-list"></div>
+      </div>
+    </section>
+
+    <section class="table-grid">
+      <div class="panel table-panel">
+        <div class="table-top">
+          <div>
+            <span class="label">Discard</span>
+            <strong id="topCardValue">Waiting</strong>
+          </div>
+          <div>
+            <span class="label">Current color</span>
+            <strong id="currentColorValue">None</strong>
+          </div>
+          <div>
+            <span class="label">Deck</span>
+            <strong id="deckCountValue">0 cards</strong>
+          </div>
+          <div>
+            <span class="label">Turn</span>
+            <strong id="turnValue">Lobby</strong>
+          </div>
+        </div>
+
+        <div class="table-center">
+          <div id="discardPile" class="card-stack card-stack-discard"></div>
+          <button id="drawBtn" type="button" class="draw-pile">
+            <span>Draw</span>
+            <strong id="drawCountValue">0</strong>
+          </button>
+        </div>
+
+        <div class="status-wrap">
+          <p id="gameStatus" class="status-line">Open the room on one device, then share the room link with everyone else.</p>
+          <div id="colorPicker" class="color-picker hidden" aria-label="Choose a wild color">
+            <button type="button" data-color="red" class="color-red">Red</button>
+            <button type="button" data-color="yellow" class="color-yellow">Yellow</button>
+            <button type="button" data-color="green" class="color-green">Green</button>
+            <button type="button" data-color="blue" class="color-blue">Blue</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel sidebar-panel">
+        <h2>Rules</h2>
+        <p class="rules-copy">Classic-style UNO flow with number cards, skips, reverses, draw twos, wilds, and wild draw fours. Draws stack only through the card effect itself. No challenge rule for wild draw four.</p>
+        <p class="rules-copy">The host tab keeps the match alive. If the host leaves, everyone should rejoin a fresh room.</p>
+      </div>
+    </section>
+
+    <section class="panel hand-panel">
+      <div class="hand-header">
+        <h2>Your Hand</h2>
+        <p id="handHint" class="status-line">Waiting for players.</p>
+      </div>
+      <div id="handCards" class="hand-cards"></div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
