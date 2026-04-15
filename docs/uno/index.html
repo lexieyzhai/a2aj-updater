@@ -13,114 +13,117 @@
   <main class="shell">
     <section class="hero panel">
       <div>
-        <p class="eyebrow">Shareable multiplayer room</p>
+        <p class="eyebrow">GamePigeon-style rebuild</p>
         <h1>Literally UNO</h1>
-        <p class="intro">Host a room, share the link, and play in the browser with up to 6 people. The first player opens the room and runs the game state for everyone else.</p>
+        <p class="intro">Built for 2 players with a simpler room flow: create a match, share the join link, and start once your friend is in. Online sync uses Firebase Realtime Database instead of browser-to-browser guessing.</p>
       </div>
       <div class="hero-actions">
-        <button id="copyLinkBtn" type="button" class="secondary">Copy Room Link</button>
-        <button id="newRoomBtn" type="button">New Room</button>
+        <button id="createMatchBtn" type="button">Create Match</button>
+        <button id="copyInviteBtn" type="button" class="secondary">Copy Join Link</button>
       </div>
     </section>
 
-    <section class="lobby-grid">
-      <div class="panel">
-        <h2>Room</h2>
-        <div class="room-meta">
-          <div>
-            <span class="label">Room ID</span>
-            <strong id="roomIdValue">Pending</strong>
-          </div>
-          <div>
-            <span class="label">Role</span>
-            <strong id="roleValue">Connecting</strong>
-          </div>
-          <div>
-            <span class="label">Connection</span>
-            <strong id="connectionValue">Starting</strong>
-          </div>
+    <section class="panel control-panel">
+      <div class="control-grid">
+        <div>
+          <label class="field-label" for="playerNameInput">Name</label>
+          <input id="playerNameInput" type="text" maxlength="16" placeholder="Player name" autocomplete="nickname" />
         </div>
-
-        <form id="joinForm" class="join-form">
-          <label for="playerName">Display name</label>
-          <input id="playerName" type="text" maxlength="16" placeholder="Player name" autocomplete="nickname" />
-
-          <label for="roomInput">Join another room</label>
-          <div class="join-row">
-            <input id="roomInput" type="text" maxlength="24" placeholder="Room code" />
-            <button type="submit">Join Room</button>
+        <div>
+          <label class="field-label" for="roomCodeInput">Room code</label>
+          <div class="inline-row">
+            <input id="roomCodeInput" type="text" maxlength="12" placeholder="room code" />
+            <button id="joinMatchBtn" type="button" class="secondary">Join Match</button>
           </div>
-        </form>
-
-        <div class="start-row">
-          <button id="startGameBtn" type="button">Start Match</button>
-          <p id="roomHint" class="status-line">Need at least 2 players to start.</p>
         </div>
       </div>
 
-      <div class="panel">
-        <h2>Players</h2>
+      <div class="pill-row">
+        <div class="pill">
+          <span class="pill-label">Backend</span>
+          <strong id="backendValue">Checking</strong>
+        </div>
+        <div class="pill">
+          <span class="pill-label">Room</span>
+          <strong id="roomValue">None</strong>
+        </div>
+        <div class="pill">
+          <span class="pill-label">Role</span>
+          <strong id="roleValue">Spectating</strong>
+        </div>
+        <div class="pill">
+          <span class="pill-label">State</span>
+          <strong id="phaseValue">Idle</strong>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button id="startGameBtn" type="button">Start Match</button>
+        <button id="leaveMatchBtn" type="button" class="secondary">Leave Match</button>
+      </div>
+
+      <p id="statusLine" class="status-line">Create a match or open a join link.</p>
+      <p id="setupLine" class="setup-line"></p>
+    </section>
+
+    <section class="board-grid">
+      <section class="panel player-panel">
+        <div class="section-head">
+          <h2>Players</h2>
+          <span id="turnBadge" class="turn-badge">Lobby</span>
+        </div>
         <div id="playersList" class="players-list"></div>
-      </div>
-    </section>
+      </section>
 
-    <section class="table-grid">
-      <div class="panel table-panel">
-        <div class="table-top">
+      <section class="panel table-panel">
+        <div class="table-stats">
           <div>
-            <span class="label">Discard</span>
+            <span class="stat-label">Top Card</span>
             <strong id="topCardValue">Waiting</strong>
           </div>
           <div>
-            <span class="label">Current color</span>
-            <strong id="currentColorValue">None</strong>
+            <span class="stat-label">Current Color</span>
+            <strong id="colorValue">None</strong>
           </div>
           <div>
-            <span class="label">Deck</span>
-            <strong id="deckCountValue">0 cards</strong>
-          </div>
-          <div>
-            <span class="label">Turn</span>
-            <strong id="turnValue">Lobby</strong>
+            <span class="stat-label">Deck</span>
+            <strong id="deckValue">0</strong>
           </div>
         </div>
 
-        <div class="table-center">
-          <div id="discardPile" class="card-stack card-stack-discard"></div>
-          <button id="drawBtn" type="button" class="draw-pile">
+        <div class="table-main">
+          <div id="discardSlot" class="card-slot"></div>
+          <button id="drawCardBtn" type="button" class="draw-slot">
             <span>Draw</span>
-            <strong id="drawCountValue">0</strong>
+            <strong id="drawDeckValue">0</strong>
           </button>
         </div>
 
-        <div class="status-wrap">
-          <p id="gameStatus" class="status-line">Open the room on one device, then share the room link with everyone else.</p>
-          <div id="colorPicker" class="color-picker hidden" aria-label="Choose a wild color">
-            <button type="button" data-color="red" class="color-red">Red</button>
-            <button type="button" data-color="yellow" class="color-yellow">Yellow</button>
-            <button type="button" data-color="green" class="color-green">Green</button>
-            <button type="button" data-color="blue" class="color-blue">Blue</button>
-          </div>
+        <div id="wildChooser" class="wild-chooser hidden">
+          <button type="button" data-color="red" class="wild-red">Red</button>
+          <button type="button" data-color="yellow" class="wild-yellow">Yellow</button>
+          <button type="button" data-color="green" class="wild-green">Green</button>
+          <button type="button" data-color="blue" class="wild-blue">Blue</button>
         </div>
-      </div>
+      </section>
 
-      <div class="panel sidebar-panel">
-        <h2>Rules</h2>
-        <p class="rules-copy">Classic-style UNO flow with number cards, skips, reverses, draw twos, wilds, and wild draw fours. Draws stack only through the card effect itself. No challenge rule for wild draw four.</p>
-        <p class="rules-copy">The host tab keeps the match alive. If the host leaves, everyone should rejoin a fresh room.</p>
-      </div>
+      <section class="panel rule-panel">
+        <h2>Mode</h2>
+        <p class="rules-copy">2-player only. Reverse acts like Skip, matching normal UNO 2-player behavior. Wild Draw 4 has no challenge rule.</p>
+        <p class="rules-copy">Online play needs Firebase configured in `docs/uno/firebase-config.js`. Without that, the page stays in setup mode instead of pretending to sync.</p>
+      </section>
     </section>
 
     <section class="panel hand-panel">
-      <div class="hand-header">
+      <div class="section-head">
         <h2>Your Hand</h2>
-        <p id="handHint" class="status-line">Waiting for players.</p>
+        <span id="handStatus" class="hand-status">Waiting</span>
       </div>
       <div id="handCards" class="hand-cards"></div>
     </section>
   </main>
 
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="app.js"></script>
+  <script src="firebase-config.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
